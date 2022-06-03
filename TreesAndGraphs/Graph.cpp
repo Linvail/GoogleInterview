@@ -261,16 +261,6 @@ namespace Graph
             int inDegree = 0;
         };
 
-        inline void insertRecipeToGraph(unordered_map<string, RecipeNode>& recipeGraph, int index, const string& name)
-        {
-            if (recipeGraph.count(name) == 0)
-            {
-                RecipeNode node;
-                node.index = index;
-                recipeGraph.insert(pair<string, RecipeNode>(name, node));
-            }
-        }
-
         vector<string> findAllRecipes(vector<string>& recipes, vector<vector<string>>& ingredients, vector<string>& supplies)
         {
             const size_t len = recipes.size();
@@ -278,31 +268,22 @@ namespace Graph
 
             for (int i = 0; i < len; ++i)
             {
+                RecipeNode node;
+                node.index = i;
+                recipeGraph.insert(pair<string, RecipeNode>(recipes[i], node));
+            }
+
+            for (int i = 0; i < len; ++i)
+            {
                 const string& recipe = recipes[i];
-                insertRecipeToGraph(recipeGraph, i, recipe);
                 const vector<string>& ingredientSet = ingredients[i];
 
                 for (int j = 0; j < ingredientSet.size(); ++j)
                 {
                     const string& ingredient = ingredientSet[j];
-                    bool isRecipe = recipeGraph.count(ingredient) > 0;
-                    if (!isRecipe)
-                    {
-                        // This recipe node might not be created yet, check whether it is in recipes.
-                        auto iter = find(recipes.begin(), recipes.end(), ingredient);
-                        if (iter != recipes.end())
-                        {
-                            isRecipe = true;
-                            // This recipe node has not been created.
-                            int index = iter - recipes.begin();
-                            insertRecipeToGraph(recipeGraph, index, ingredient);
-                        }
-                    }
-
-                    if (isRecipe)
+                    if (recipeGraph.count(ingredient) > 0)
                     {
                         // If this ingredient is also a recipe and needed by the current recipe.
-                        insertRecipeToGraph(recipeGraph, i, ingredient);
                         recipeGraph[ingredient].outEdges.push_back( recipe );
                         recipeGraph[recipe].inDegree++;
                     }
