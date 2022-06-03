@@ -216,26 +216,24 @@ int main()
     // Input: height = [1,8,6,2,5,4,8,3,7]
     // Output: 49
     vector<int> intV = { 1,8,6,2,5,4,8,3,7 };
-    cout << "Result of Container With Most Water: " << maxArea(intV);
-    cout << "\n\n";
+    cout << "\n11. Container With Most Water: " << maxArea(intV) << endl;
 
     // 31. Next Permutation
     // Input: nums = [1, 1, 5]
     // Output : [1, 5, 1]
     intV = { 8, 7, 4, 3, 1 };
     nextPermutation(intV);
-    cout << "Result of Next Permutation: ";
+    cout << "\n31. Next Permutation: ";
     LeetCodeUtil::PrintVector(intV);
-    cout << "\n\n";
+    cout << "\n";
 
     // 424. Longest Repeating Character Replacement
     // Input: s = "AABABBA", k = 1
     // Output: 4
     string inputStr = "AABABBA";
     int k = 1;
-    cout << "Result of Longest Repeating Character Replacement for " << inputStr << " : ";
+    cout << "\n424. Longest Repeating Character Replacement for " << inputStr << " : ";
     cout << characterReplacement(inputStr, k) << endl;
-    cout << "\n\n";
 
     // 844. Backspace String Compare (Easy)
     // Input: s = "ab##", t = "c#d#"
@@ -248,5 +246,5 @@ int main()
     // Output: true
     inputStr = "nzp#o#g";
     string inputStr2 = "b#nzp#o#g";
-    cout << "Result of Backspace String Compare (Easy): " << backspaceCompare(inputStr, inputStr2) << endl;
+    cout << "\n844. Backspace String Compare (Easy): " << backspaceCompare(inputStr, inputStr2) << endl;
 }

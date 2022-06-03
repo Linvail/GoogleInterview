@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{9b34461b-3086-4dba-930a-ac29f67acc09}</ProjectGuid>
-    <RootNamespace>TreesAndGraphs</RootNamespace>
+    <ProjectGuid>{ac350988-87ce-4b64-be79-8e4173e1deac}</ProjectGuid>
+    <RootNamespace>DynamicProgramming</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -116,7 +116,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\MediumCollection\LeetCodeUtil\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\MediumCollection\LeetCodeUtil\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -141,13 +141,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Graph.cpp" />
-    <ClCompile Include="Matrix.cpp" />
-    <ClCompile Include="TreesAndGraphs.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Graph.h" />
-    <ClInclude Include="Matrix.h" />
+    <ClCompile Include="DynamicProgramming.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

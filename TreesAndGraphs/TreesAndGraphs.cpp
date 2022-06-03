@@ -1,15 +1,16 @@
 // TreesAndGraphs.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
-
-#include <iostream>
+#include "LeetCodeUtil.h"
+#include "Graph.h"
+#include "Matrix.h"
 
 #include <algorithm> // std::reverse
-#include <vector>
-#include <unordered_map>
+#include <iostream>
 #include <map>
 #include <queue>
-
-#include "LeetCodeUtil.h"
+#include <unordered_map>
+#include <vector>
+#include <deque> // To build string in reverse order.
 
 using namespace LeetCodeUtil;
 
@@ -70,224 +71,206 @@ int countNodes(TreeNode* root)
     return result;
 }
 
-
 //---------------------------------------------------------------------------------------
-// 994. Rotting Oranges (Medium)
-// You are given an m x n grid where each cell can have one of three values:
-// 0 representing an empty cell,
-// 1 representing a fresh orange, or
-// 2 representing a rotten orange.
-//
-// Topic: Breadth first search
-//
-// Real onsite interview question.
+// 2096. Step-By-Step Directions From a Binary Tree Node to Another
+// Topic: Lowest Common Ancestor
 //---------------------------------------------------------------------------------------
-
-int orangesRotting(vector<vector<int>>& grid)
-{
-    // This is not a simple BFS practice because there might be multiple rotten oranges.
-    // All rotten oranges infect adjacent orange at the same time.
-    // Therefore, we must do BFS for all rotten oranges at the same time.
-    const int m = grid.size();
-    const int n = grid[0].size();
-
-    int result = 0;
-    int remainingGoodOrange = 0;
-    // Store the orange that is rotten but not yet infect others.
-    queue<pair<int, int>> orangeQueue;
-
-    // Gather fresh and rotten oranges.
-    for (int i = 0; i < m; i++)
-    {
-        for (int j = 0; j < n; ++j)
-        {
-            if (grid[i][j] == 2)
-            {
-                orangeQueue.push({ i, j });
-            }
-            else if (grid[i][j] == 1)
-            {
-                remainingGoodOrange++;
-            }
-        }
-    }
-
-    while (!orangeQueue.empty() && remainingGoodOrange > 0)
-    {
-        const int orangeCount = orangeQueue.size();
-        // Use a for-loop to get all rotten oranges start to infect others.
-        for (int k = 0; k < orangeCount; ++k)
-        {
-            auto coord = orangeQueue.front();
-            orangeQueue.pop();
-
-            // Get adjacent orange rotten.
-            if (coord.first > 0 && grid[coord.first - 1][coord.second] == 1)
-            {
-                grid[coord.first - 1][coord.second] = 2;
-                orangeQueue.push({ coord.first - 1, coord.second });
-                remainingGoodOrange--;
-            }
-            if (coord.second > 0 && grid[coord.first][coord.second - 1] == 1)
-            {
-                grid[coord.first][coord.second - 1] = 2;
-                orangeQueue.push({ coord.first, coord.second - 1 });
-                remainingGoodOrange--;
-            }
-            if (coord.first < m - 1 && grid[coord.first + 1][coord.second] == 1)
-            {
-                grid[coord.first + 1][coord.second] = 2;
-                orangeQueue.push({ coord.first + 1, coord.second });
-                remainingGoodOrange--;
-            }
-            if (coord.second < n - 1 && grid[coord.first][coord.second + 1] == 1)
-            {
-                grid[coord.first][coord.second + 1] = 2;
-                orangeQueue.push({ coord.first, coord.second + 1 });
-                remainingGoodOrange--;
-            }
-        }
-
-        result++;
-    }
-
-    return remainingGoodOrange > 0 ? -1 : result;
-}
-
-
-//---------------------------------------------------------------------------------------
-// 332. Reconstruct Itinerary (Hard)
-//
-// Real onsite interview question.
-//---------------------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------------------
-// 417. Pacific Atlantic Water Flow
-//
-// Blind Curated 75
-//---------------------------------------------------------------------------------------
-class Solution417
+class Solution2096
 {
 public:
 
-    int m = 0;
-    int n = 0;
-
-    void dfs
-        (
-        vector<vector<bool>>& terrains,
-        vector<vector<int>>& heights,
-        int x,
-        int y,
-        int prevHeight
-        )
+    string getDirections(TreeNode* root, int startValue, int destValue)
     {
-        // We traverse backward from low to high.
-        if (heights[x][y] < prevHeight || terrains[x][y])
-        {
-            return;
-        }
-        // Water can flow to the ocean from this terrain.
-        terrains[x][y] = true;
+        // There are approaches:
+        // A:
+        // 1. find lowest common ancestor of start and dest.
+        // 2. find path's length from LCA to start
+        // 3. find path from LCA to dest.
+        // 4. Combine startPath length's "U" with destPath's reverse.
+        // B:
+        // 1. find path from root to start
+        // 2. find path from root to end.
+        // 3. delete the common path of the path 1 and path 2.
+        // 4. Combine startPath length's "U" with destPath.
 
-        const int height = heights[x][y];
-        if (x > 0)
+        // The implementation shows solution B.
+        deque<char> pathToStart;
+        findPath(root, startValue, pathToStart);
+        deque<char> pathToDest;
+        findPath(root, destValue, pathToDest);
+
+        // Delete the common path.
+        int minStrLen = min(pathToStart.size(), pathToDest.size());
+        int i = 0;
+        for (; i < minStrLen; ++i)
         {
-            dfs(terrains, heights, x - 1, y, height);
+            if (pathToStart[i] != pathToDest[i])
+            {
+                break;
+            }
         }
-        if (x < m - 1)
+        pathToStart.erase(pathToStart.begin(), pathToStart.begin() + i);
+        pathToDest.erase(pathToDest.begin(), pathToDest.begin() + i);
+
+        string result;
+        for (int i = 0; i < pathToStart.size(); ++i)
         {
-            dfs(terrains, heights, x + 1, y, height);
+            result.push_back('U');
         }
-        if (y > 0)
-        {
-            dfs(terrains, heights, x, y - 1, height);
-        }
-        if (y < n - 1)
-        {
-            dfs(terrains, heights, x, y + 1, height);
-        }
+
+        result.append(pathToDest.begin(), pathToDest.end());
+
+        return result;
     }
 
-    vector<vector<int>> pacificAtlantic(vector<vector<int>>& heights)
+    bool findPath(TreeNode* root, int target, deque<char>& resultStr)
     {
-        // Idea: Do DFS from the edge and mark a terrain whether it can direct water
-        // to Pacific/Atlantic. If both are true, that terrain is in our answer.
-        m = heights.size();
-        n = heights[0].size();
+        if (!root)
+        {
+            return false;
+        }
+        if (root->val == target)
+        {
+            return true;
+        }
 
+        bool onLeft = findPath(root->left, target, resultStr);
+        if (onLeft)
+        {
+            resultStr.push_front('L');
+            return true;
+        }
+        bool onRight = findPath(root->right, target, resultStr);
+        if (onRight)
+        {
+            resultStr.push_front('R');
+            return true;
+        }
+
+        return false;
+    }
+};
+
+//---------------------------------------------------------------------------------------
+// 366. Find Leaves of Binary Tree
+//---------------------------------------------------------------------------------------
+class Solution366
+{
+public:
+    // There are two majors ways
+    // Solution A: Use the height property - height is the number of edges on the path to
+    // the root. So, the height of leaf is always 0. The better thing is that the nodes
+    // share the same height must exists in the same vector.
+    // Therefore, as long as we know the depth of a node, we know which vector we should
+    // put it in.
+    //
+    // Solution B: Use DFS to reach the leaves. Put them in a vector. Remove them from
+    // the tree (so its parent must modify the right/left).
+    // One iteration will remove one level of the nodes. If the max depth is n, we will
+    // have n + 1 vectors.
+
+    vector<vector<int>> findLeaves(TreeNode* root)
+    {
+        // Solution A
         vector<vector<int>> result;
-        // To record if a location where water can flow to Pacific/Atlantic from it.
-        // pacificTerrains[i][j] means that water can flow to Pacific from location [i, j].
-        vector<vector<bool>> pacificTerrains(m, vector<bool>(n, false));
-        vector<vector<bool>> atlanticTerrains(m, vector<bool>(n, false));
+        findHeight(root, result);
+        return result;
+    }
 
-        for (int i = 0; i < m; ++i)
+    int findHeight(TreeNode* root, vector<vector<int>>& result)
+    {
+        if (!root)
         {
-            // Left shore.
-            dfs(pacificTerrains, heights, i, 0, INT_MIN);
-            // Right shore.
-            dfs(atlanticTerrains, heights, i, n - 1, INT_MIN);
+            // This make leaf have 0 height.
+            return -1;
+        }
+        int depth = 1 + max(findHeight(root->left, result), findHeight(root->right, result));
+
+        if (result.size() < depth + 1)
+        {
+            result.resize(depth + 1);
         }
 
-        for (int j = 0; j < n; ++j)
-        {
-            // Top shore.
-            dfs(pacificTerrains, heights, 0, j, INT_MIN);
-            // Bottom shore.
-            dfs(atlanticTerrains, heights, m - 1, j, INT_MIN);
-        }
+        result[depth].push_back(root->val);
 
-        for (int i = 0; i < m; ++i)
+        return depth;
+    }
+
+    vector<vector<int>> findLeaves_b(TreeNode* root)
+    {
+        // Solution B
+        vector<vector<int>> result;
+
+        while (root)
         {
-            for (int j = 0; j < n; ++j)
-            {
-                if (pacificTerrains[i][j] && atlanticTerrains[i][j])
-                {
-                    result.push_back({ i, j });
-                }
-            }
+            vector<int> levelResult;
+            root = removeLeaf(root, levelResult);
+            result.push_back(levelResult);
         }
 
         return result;
     }
+
+    TreeNode* removeLeaf(TreeNode* root, vector<int>& levelResult)
+    {
+        if (!root )
+        {
+            return nullptr;
+        }
+        if (!root->left && !root->right) // A leaf
+        {
+            levelResult.push_back(root->val);
+            // We should delete root right here but I don't know if LeetCode allows me.
+            return nullptr; // Remove this from the parent.
+        }
+
+        root->left = removeLeaf(root->left, levelResult);
+        root->right = removeLeaf(root->right, levelResult);
+
+        return root;
+    }
 };
+
 
 //---------------------------------------------------------------------------------------
 // Main
 //---------------------------------------------------------------------------------------
 int main()
 {
-    std::cout << "Trees and Graphs!\n";
-
-    // 994. Rotting Oranges (Medium)
-    // Input: grid = [[2,1,1],[1,1,0],[0,1,1]]
-    // Output: 4
-    // Input: grid = [[2,1,1],[0,1,1],[1,0,1]]
-    // Output: -1
-    // Need to test: [[0]], [[1]], [[2]], [[0,2,2]], [[2,1,0],[0,0,0],[1,1,2]]
-    // Input: [[2,1,1],[1,1,1],[0,1,2]]
-    // Output: 2
-    vector<vector<int>> inputMatrix;
-    LeetCodeUtil::BuildIntMatrixFromString("[[2,1,1],[0,1,1],[1,0,1]]", &inputMatrix);
-    cout << "\nResult of Rotting Oranges: " << orangesRotting(inputMatrix) << endl;
+    std::cout << "Run problems of tree, matrix, graph!\n";
 
     // 222. Count Complete Tree Nodes (Medium)
     // Input: root = [1,2,3,4,5,6]
     // Output: 6
     TreeNode* root = LeetCodeUtil::BuildTreeFromLevelOrderString("[1,2,3,4,5,6]");
-    cout << "\nResult of Count Complete Tree Nodes (Medium): " << countNodes(root) << endl;
+    cout << "\n222. Count Complete Tree Nodes: " << countNodes(root) << endl;
     LeetCodeUtil::DeleteTree(root);
 
-    // 417. Pacific Atlantic Water Flow
-    // Input: heights = [[1,2,2,3,5],[3,2,3,4,4],[2,4,5,3,1],[6,7,1,4,5],[5,1,1,2,4]]
-    // Output: [[0, 4], [1, 3], [1, 4], [2, 2], [3, 0], [3, 1], [4, 0]]
-    // Input: heights = [[1,1],[1,1],[1,1]]
-    // Output:
-    LeetCodeUtil::BuildIntMatrixFromString("[[1,1],[1,1],[1,1]]", &inputMatrix);
-    Solution417 sol417;
-    auto resultVV = sol417.pacificAtlantic(inputMatrix);
-    cout << "\nPacific Atlantic Water Flow: ";
-    LeetCodeUtil::PrintMatrix(resultVV);
+    // 2096. Step-By-Step Directions From a Binary Tree Node to Another
+    // Input: root = [5, 1, 2, 3, null, 6, 4], startValue = 3, destValue = 6
+    // Output: "UURL"
+    // Input: root = [2,1], startValue = 2, destValue = 1
+    // Output: "L"
+    // Input: root = [1,null,10,12,13,4,6,null,15,null,null,5,11,null,2,14,7,null,8,null,null,null,9,3], startValue = 6, destValue = 15
+    // Output: "UURR"
+    Solution2096 sol2096;
+    root = LeetCodeUtil::BuildTreeFromLevelOrderString("[1,null,10,12,13,4,6,null,15,null,null,5,11,null,2,14,7,null,8,null,null,null,9,3]");
+    int startValue = 6;
+    int destValue = 15;
+    cout << "\n2096. Step-By-Step Directions From a Binary Tree Node to Another: " << sol2096.getDirections(root, startValue, destValue) << endl;
+
+    // 366. Find Leaves of Binary Tree
+    // Input: root = [1,2,3,4,5]
+    // Output: [[4, 5, 3], [2], [1]]
+    root = LeetCodeUtil::BuildTreeFromLevelOrderString("[1,2,3,4,5]");
+    Solution366 sol366;
+    auto resultVVI = sol366.findLeaves(root);
+    cout << "\n366. Find Leaves of Binary Tree: " << endl;
+    LeetCodeUtil::PrintMatrix(resultVVI);
+    LeetCodeUtil::DeleteTree(root);
+
+    Graph::TestGraph();
+
+    Matrix::TestMatrix();
 }
 

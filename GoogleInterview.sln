@@ -11,6 +11,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Math", "Math\Math.vcxproj",
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TreesAndGraphs", "TreesAndGraphs\TreesAndGraphs.vcxproj", "{9B34461B-3086-4DBA-930A-AC29F67ACC09}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DynamicProgramming", "DynamicProgramming\DynamicProgramming.vcxproj", "{AC350988-87CE-4B64-BE79-8E4173E1DEAC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -51,6 +53,14 @@ Global
 		{9B34461B-3086-4DBA-930A-AC29F67ACC09}.Release|x64.Build.0 = Release|x64
 		{9B34461B-3086-4DBA-930A-AC29F67ACC09}.Release|x86.ActiveCfg = Release|Win32
 		{9B34461B-3086-4DBA-930A-AC29F67ACC09}.Release|x86.Build.0 = Release|Win32
+		{AC350988-87CE-4B64-BE79-8E4173E1DEAC}.Debug|x64.ActiveCfg = Debug|x64
+		{AC350988-87CE-4B64-BE79-8E4173E1DEAC}.Debug|x64.Build.0 = Debug|x64
+		{AC350988-87CE-4B64-BE79-8E4173E1DEAC}.Debug|x86.ActiveCfg = Debug|Win32
+		{AC350988-87CE-4B64-BE79-8E4173E1DEAC}.Debug|x86.Build.0 = Debug|Win32
+		{AC350988-87CE-4B64-BE79-8E4173E1DEAC}.Release|x64.ActiveCfg = Release|x64
+		{AC350988-87CE-4B64-BE79-8E4173E1DEAC}.Release|x64.Build.0 = Release|x64
+		{AC350988-87CE-4B64-BE79-8E4173E1DEAC}.Release|x86.ActiveCfg = Release|Win32
+		{AC350988-87CE-4B64-BE79-8E4173E1DEAC}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
