@@ -6,9 +6,13 @@
 #include <algorithm> // std::reverse
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 #include <map>
 #include <string>
 #include <set>
+#include <queue>
+#include <deque>
+#include <random>
 
 #include "LeetCodeUtil.h"
 
@@ -252,7 +256,256 @@ int expressiveWords(string s, vector<string>& words)
     return result;
 }
 
+//---------------------------------------------------------------------------------------
+// 539. Minimum Time Difference
+//---------------------------------------------------------------------------------------
+int findMinDifference(vector<string>& timePoints)
+{
+    if (timePoints.size() < 2)
+    {
+        return 0;
+    }
 
+    set<int> inMinutes;
+
+    for (const auto& time : timePoints)
+    {
+        const int hour = stoi(time.substr(0, 2));
+        const int minute = stoi(time.substr(3, 2));
+        const int total = hour * 60 + minute;
+        if (inMinutes.count(total))
+        {
+            return 0;
+        }
+
+        inMinutes.insert(total);
+    }
+
+    auto iter = inMinutes.begin();
+    int prev = *iter;
+    iter++;
+    int result = INT_MAX;
+
+    for (; iter != inMinutes.end(); ++iter)
+    {
+        int diff = min( *iter - prev, prev + (1440 - *iter) );
+        result = min(result, diff);
+        prev = *iter;
+    }
+
+    // Deal with the head and tail.
+    prev = *inMinutes.begin();
+    int diff = min(*inMinutes.rbegin() - prev, prev + ( 1440 - *inMinutes.rbegin() ));
+    result = min(result, diff);
+
+    return result;
+}
+
+//---------------------------------------------------------------------------------------
+// 1610. Maximum Number of Visible Points
+// Topic: Math
+//
+// Use atan2(y,x) to transform the 2d point into polar angle.
+// If you don't know atan2, you almost have no chance to solve this.
+//---------------------------------------------------------------------------------------
+
+const double PI = 3.1415926;
+
+int visiblePoints(vector<vector<int>>& points, int angle, vector<int>& location)
+{
+    // Idea
+    // 1. Use atan2(y,x) to transform the 2d point into polar angle.
+    // 2. Put polar angles into an array, sort it. This will become a sliding window
+    //    question.
+    int seenPoints = 0;
+    vector<double> polarAngles;
+
+    for (int i = 0; i < points.size(); ++i)
+    {
+        if (points[i][0] == location[0] && points[i][1] == location[1])
+        {
+            // The point is just on the view's location.
+            seenPoints++;
+            continue;
+        }
+
+        const int y = points[i][1] - location[1];
+        const int x = points[i][0] - location[0];
+        double polarAngle = atan2(y, x);
+
+        // Perform insertion sort.
+        //auto iter = std::lower_bound(polarAngles.begin(), polarAngles.end(), polarAngle);
+        //polarAngles.insert(iter, polarAngle);
+        polarAngles.push_back(polarAngle);
+    }
+    sort(polarAngles.begin(), polarAngles.end());
+
+    // The direction of view many rotate nearly 360 degree. In 2nd plane, you
+    // are supposed to see the points at the beginning of the array, but you won't see
+    // them in the tail of the array.
+    // To overcome this, we can add (angle +  2 PI) for every angles into the array.
+    const size_t pointCount = polarAngles.size();
+    for (int i = 0; i < pointCount; ++i)
+    {
+        const double dupAngle = polarAngles[i] + 2 * PI;
+        polarAngles.emplace_back(dupAngle);
+    }
+
+    const double viewAngleRad = angle * PI / 180.0;
+    // Assume your view's boundary just cover the i point, calculate how many points you
+    // can see in this situation. Iterate over every i points.
+    int maxCovered = 0;
+    int covered = 0;
+    for (int i = 0; i < pointCount; ++i)
+    {
+        while (polarAngles[i] + viewAngleRad >= polarAngles[covered])
+        {
+            covered++;
+        }
+
+        maxCovered = max(maxCovered, covered - i);
+    }
+
+    return seenPoints + maxCovered;
+}
+
+//---------------------------------------------------------------------------------------
+// 2178. Maximum Split of Positive Even Integers
+// Greedy
+//---------------------------------------------------------------------------------------
+class Solution2178
+{
+public:
+    vector<long long> maximumEvenSplit(long long finalSum)
+    {
+        // 28:   2  4  6  8  10
+        // psum: 2  6 12 20  30(X)
+        // 28 - 20 = 8
+        // Add 8 to 8 (the last element) = 16.
+        // So answer is {2, 4, 6, 16}
+
+        vector<long long> result;
+        if (finalSum % 2 != 0)
+        {
+            return result;
+        }
+
+        long long item = 0;
+        long long sum = 0;
+        long long prevSum = 0;
+        while (true)
+        {
+            item += 2;
+            prevSum = sum;
+            sum += item;
+            if (sum > finalSum)
+            {
+                *result.rbegin() += finalSum - prevSum;
+                break;
+            }
+            else
+            {
+                result.push_back(item);
+            }
+        }
+
+        return result;
+    }
+};
+
+//---------------------------------------------------------------------------------------
+// 843. Guess the Word (Hard)
+// Topic: Math, game theory
+//---------------------------------------------------------------------------------------
+class Solution843
+{
+public:
+
+    class Master
+    {
+    public:
+        int guess(string word)
+        {
+            guessCount++;
+            int ret = 0;
+            for (int i = 0; i < m_secret.size(); ++i)
+            {
+                if (word[i] == m_secret[i])
+                {
+                    ret++;
+                }
+            }
+
+            if (ret == 6)
+            {
+                cout << "Matched!";
+            }
+
+            return ret;
+        }
+
+        Master()
+            : m_secret("hbaczn")
+        {
+        }
+
+        int guessCount = 0;
+        string m_secret;
+    };
+
+    void findSecretWord(vector<string>& wordlist, Master& master)
+    {
+        int guessCount = 10;
+
+        random_device rd;
+        mt19937 generator(rd());
+        int returned = 0;
+
+        while (returned != 6 && guessCount > 0)
+        {
+            guessCount--;
+
+            uniform_int_distribution<int> dist(0, wordlist.size() - 1);
+            string candidate = wordlist[dist(generator)];
+
+            returned = master.guess(candidate);
+
+            if (returned == 6)
+            {
+                break;
+            }
+
+            vector<string> subSet;
+            for(const auto& word : wordlist)
+            {
+                int match = calcMatchCount(candidate, word);
+                if (match == returned)
+                {
+                    subSet.emplace_back(word);
+                }
+            }
+
+            wordlist.swap(subSet);
+        }
+    }
+
+    int calcMatchCount(const string& str1, const string& str2)
+    {
+        int ret = 0;
+        for (int i = 0; i < str1.size(); ++i)
+        {
+            if (str1[i] == str2[i])
+            {
+                ret++;
+            }
+        }
+        return ret;
+    }
+};
+
+//---------------------------------------------------------------------------------------
+// Main
+//---------------------------------------------------------------------------------------
 int main()
 {
     std::cout << "Math!\n";
@@ -288,5 +541,45 @@ int main()
     inputString = "zzzzzyyyyy";
     words = { "zzyy","zy","zyy" };
     cout << "Result of Expressive Words: " << expressiveWords(inputString, words) << endl;
+
+    // 539. Minimum Time Difference
+    // Input: timePoints = ["00:00","23:59","00:00"]
+    // Output: 0
+    vector<string> inputVS = {"03:00","00:00","23:00"};
+    cout << "\n539. Minimum Time Difference: " << findMinDifference(inputVS) << endl;
+
+    // 1610. Maximum Number of Visible Points
+    // Input: points = [[2,1],[2,2],[3,3]], angle = 90, location = [1,1]
+    // Output: 3
+    // Input: points = [[2,1],[2,2],[3,4],[1,1]], angle = 90, location = [1,1]
+    // Output: 4
+    // Input: points = [[1,0],[2,1]], angle = 13, location = [1,1]
+    // Output: 1
+    // Input: points = [[1,1],[1,1],[1,1]], angle = 1, location = [1, 1]
+    // Output: 3
+    vector<vector<int>> points;
+    LeetCodeUtil::BuildIntMatrixFromString("[[2,1],[2,2],[3,4],[1,1]]", &points);
+    int angle = 90;
+    vector<int> location = { 1,1 };
+    cout << "\n1610. Maximum Number of Visible Points: " << visiblePoints(points, angle, location) << endl;
+
+    // 2178. Maximum Split of Positive Even Integers
+    long long finalSum = 28;
+    Solution2178 sol2178;
+    vector<long long> resultVL = sol2178.maximumEvenSplit(finalSum);
+    cout << "\n2178. Maximum Split of Positive Even Integers: " << endl;
+    LeetCodeUtil::PrintVector(resultVL);
+
+    words = { "gaxckt", "trlccr", "jxwhkz", "ycbfps", "peayuf", "yiejjw", "ldzccp", "nqsjoa", "qrjasy", "pcldos", "acrtag", "buyeia", "ubmtpj", "drtclz", \
+        "zqderp", "snywek", "caoztp", "ibpghw", "evtkhl", "bhpfla", "ymqhxk", "qkvipb", "tvmued", "rvbass", "axeasm", "qolsjg", "roswcb", "vdjgxx", "bugbyv", "zipjpc", \
+        "tamszl", "osdifo", "dvxlxm", "iwmyfb", "wmnwhe", "hslnop", "nkrfwn", "puvgve", "rqsqpq", "jwoswl", "tittgf", "evqsqe", "aishiv", "pmwovj", "sorbte", "hbaczn", \
+        "coifed", "hrctvp", "vkytbw", "dizcxz", "arabol", "uywurk", "ppywdo", "resfls", "tmoliy", "etriev", "oanvlx", "wcsnzy", "loufkw", "onnwcy", "novblw", "mtxgwe", \
+        "rgrdbt", "ckolob", "kxnflb", "phonmg", "egcdab", "cykndr", "lkzobv", "ifwmwp", "jqmbib", "mypnvf", "lnrgnj", "clijwa", "kiioqr", "syzebr", "rqsmhg", "sczjmz", \
+        "hsdjfp", "mjcgvm", "ajotcx", "olgnfv", "mjyjxj", "wzgbmg", "lpcnbj", "yjjlwn", "blrogv", "bdplzs", "oxblph", "twejel", "rupapy", "euwrrz", "apiqzu", "ydcroj", \
+        "ldvzgq", "zailgu", "xgqpsr", "wxdyho", "alrplq", "brklfk" };
+
+    Solution843 sol843;
+    Solution843::Master master;
+    sol843.findSecretWord(words, master);
 
 }

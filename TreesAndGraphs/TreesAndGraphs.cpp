@@ -100,8 +100,8 @@ public:
         findPath(root, destValue, pathToDest);
 
         // Delete the common path.
-        int minStrLen = min(pathToStart.size(), pathToDest.size());
-        int i = 0;
+        size_t minStrLen = min(pathToStart.size(), pathToDest.size());
+        size_t i = 0;
         for (; i < minStrLen; ++i)
         {
             if (pathToStart[i] != pathToDest[i])

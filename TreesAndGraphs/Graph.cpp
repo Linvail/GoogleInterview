@@ -254,9 +254,9 @@ namespace Graph
     {
     public:
 
-        struct RecipeNode
+        struct Node
         {
-            int index = 0;
+            bool isRecipe = false;
             vector<string> outEdges;
             int inDegree = 0;
         };
@@ -264,84 +264,71 @@ namespace Graph
         vector<string> findAllRecipes(vector<string>& recipes, vector<vector<string>>& ingredients, vector<string>& supplies)
         {
             const size_t len = recipes.size();
-            unordered_map<string, RecipeNode> recipeGraph;
+            // All recipes and ingredients are considered as nodes.
+            unordered_map<string, Node> graph;
+            //unordered_set<string> supplySet(supplies.begin(), supplies.end());
 
             for (int i = 0; i < len; ++i)
             {
-                RecipeNode node;
-                node.index = i;
-                recipeGraph.insert(pair<string, RecipeNode>(recipes[i], node));
+                Node node;
+                node.isRecipe = true;
+                graph.insert(pair<string, Node>(recipes[i], node));
             }
 
+            // Build adjacent list.
             for (int i = 0; i < len; ++i)
             {
-                const string& recipe = recipes[i];
                 const vector<string>& ingredientSet = ingredients[i];
-
                 for (int j = 0; j < ingredientSet.size(); ++j)
                 {
                     const string& ingredient = ingredientSet[j];
-                    if (recipeGraph.count(ingredient) > 0)
-                    {
-                        // If this ingredient is also a recipe and needed by the current recipe.
-                        recipeGraph[ingredient].outEdges.push_back( recipe );
-                        recipeGraph[recipe].inDegree++;
-                    }
+                    graph[ingredient].outEdges.push_back(recipes[i]);
+                    graph[recipes[i]].inDegree++;
                 }
             }
 
-            queue<string> availableRecipe;
-            for (const auto& recipe : recipeGraph)
+            queue<string> availableQueue;
+            for (const auto& node : graph)
             {
-                if (recipe.second.inDegree == 0)
+                // In the beginning, only ingredient could have 0 inDegree.
+                // We need to check if it is in supplies.
+                if (node.second.inDegree == 0 && find(supplies.begin(), supplies.end(), node.first) != supplies.end())
                 {
-                    availableRecipe.push(recipe.first);
+                    availableQueue.push(node.first);
                 }
             }
 
             vector<string> result;
-            while (!availableRecipe.empty())
+            while (!availableQueue.empty())
             {
-                const string recipe = availableRecipe.front();
-                availableRecipe.pop();
-                const int index = recipeGraph[recipe].index;
-                if (canMake(ingredients[index], supplies))
+                const string node = availableQueue.front();
+                availableQueue.pop();
+
+                if (graph[node].isRecipe)
                 {
-                    result.push_back(recipe);
-                    supplies.push_back(recipe);
+                    // If this is a recipe, don't add ingredient.
+                    result.push_back(node);
                 }
 
-                for (const auto& nextRecipe : recipeGraph[recipe].outEdges)
+                for (const auto& nextNode : graph[node].outEdges)
                 {
-                    recipeGraph[nextRecipe].inDegree--;
-                    if (recipeGraph[nextRecipe].inDegree == 0)
+                    graph[nextNode].inDegree--;
+                    if (graph[nextNode].inDegree == 0)
                     {
-                        availableRecipe.push(nextRecipe);
+                        availableQueue.push(nextNode);
                     }
                 }
             }
 
             return result;
         }
-
-        bool canMake(const vector<string>& ingredients, const vector<string>& supplies)
-        {
-            for (const auto& ingredient : ingredients)
-            {
-                if (std::find(supplies.begin(), supplies.end(), ingredient) == supplies.end())
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
     };
 
     //---------------------------------------------------------------------------------------
-    // Got from Youtube: https://www.youtube.com/watch?v=qz9tKlF431k
+    // Inspired by Youtube video: https://www.youtube.com/watch?v=qz9tKlF431k
     // (Mock Google Coding Interview)
     //
-    // This is also asked in a Airbnb interview.
+    // It's said that the similar question was asked in a Airbnb interview.
     //
     // Idea:
     // 1. Find strongly connected component.
@@ -350,76 +337,139 @@ namespace Graph
     // 3. Do topological sort on the components. Count the number of components that has
     //    0 in-degree.
     //
-    // Input: airports = {"BGI", "CDG", "DEL", "DOH", "DSM", "EWR", "EYW", "HND", "ICN",
-    // "JFK", "LGA", "LHR", "ORD", "SAN", "SFO", "SIN", "TLV", "BUD" }
-    // routes: = { {"DSM", "ORD"}, {"ORD,"BGI"}, {"BGI", "LGA"}, {"SIN", "CDG"},
+    // Input:
+    // airports = {"BGI", "CDG", "DEL", "DOH", "DSM", "EWR", "EYW", "HND", "ICN",
+    // "JFK", "LGA", "LHR", "ORD", "SAN", "SFO", "SIN", "TLV", "BUD" };
+    // routes =
+    // {
+    // {"DSM", "ORD"}, {"ORD", "BGI"}, {"BGI", "LGA"}, {"SIN", "CDG"},
     // {"CDG", "SIN"}, {"CDG", "BUD"}, {"DEL", "DOH"}, {"DEL", "CDG"}, {"TLV", "DEL"},
     // {"EWR", "HND"}, {"HND", "ICN"}, {"HND", "JFK"}, {"ICN", "JFK"}, {"JFK", "LGA"},
     // {"EYW", "LHR"}, {"LHR", "SFO"}, {"SFO", "SAN"}, {"SFO", "DSM"}, {"SAN", "EYW"}
-    // }
-    // starting point: "LGA".
+    // };
+    // startingAirport = "LGA";
     //
     // Find out how many lines you will need to add to ensure you can travel all airports.
     // Ans: 3
+    // The following code will also give what lines they are:
+    // Add lines from LGA to [LHR,TLV,EWR].
     //---------------------------------------------------------------------------------------
 
-    #if( 0 )
-    typedef pair<int, int> pr;
-    typedef unordered_map<int, unordered_set<int> > connectInfo;
-    void fromDFS(int node, connectInfo from, vector<int>& order, unordered_set<int>& visited) {
-        if (!visited.count(node)) {
+    using RouteType = pair<string, string>;
+    using RoutesMapType = unordered_map<string, unordered_set<string>>;
+
+    void towardDfs(const string& node, const RoutesMapType& graph, deque<string>& order, unordered_set<string>& visited)
+    {
+        if (!visited.count(node))
+        {
             visited.insert(node);
-            for (auto n : from[node])
-                fromDFS(n, from, order, visited);
-            order.insert(order.begin(), node);
+            for (const auto& n : graph.at(node))
+            {
+                towardDfs(n, graph, order, visited);
+            }
+            order.push_front(node);
         }
     }
 
-    void toDFS(int node, int root, connectInfo to, unordered_map<int, int>& components) {
-        if (!components.count(node)) {
+    void reversedDfs(const string& node, const string& root, const RoutesMapType& graph, unordered_map<string, string>& components)
+    {
+        if (!components.count(node))
+        {
             components[node] = root;
-            for (auto n : to[node])
-                toDFS(n, root, to, components);
+            for (const auto& n : graph.at(node))
+            {
+                reversedDfs(n, root, graph, components);
+            }
         }
     }
 
-    unordered_map<int, int> kosasrajus(connectInfo from, connectInfo to, const unordered_set<int>& nodes) {
-        unordered_set<int> visited;
-        unordered_map<int, int> components;
-        vector<int> order;
-        for (auto node : nodes)
-            fromDFS(node, from, order, visited);
-        for (auto node : order)
-            toDFS(node, node, to, components);
+    unordered_map<string, string> findAllSsc(const RoutesMapType& graph, const RoutesMapType& reversedGraph, const unordered_set<string>& nodes)
+    {
+        // Helper to detect if a node has been visited during DFS.
+        unordered_set<string> visited;
+        // Adjacent list to represent the component.
+        // <node's name, root's name of the component that this node belongs to>
+        unordered_map<string, string> components;
+        // Store the visited node in chronologically order.
+        // First visited node is put in the end.
+        deque<string> order;
+
+        for (const auto& node : nodes)
+        {
+            towardDfs(node, graph, order, visited);
+        }
+
+        for (const auto& node : order)
+        {
+            // Call DFS on this node, every node visited by this DFS call will be added into components.
+            // The 2nd 'node' parameter means this 'node' is the representative node of that SSC.
+            reversedDfs(node, node, reversedGraph, components);
+        }
+
         return components;
     }
 
-    vector<int> least_nodes(const vector<pr>& edges) {
-        connectInfo from, to;
-        unordered_set<int> nodes;
-        vector<int> ans;
-        for (auto edge : edges) {
-            from[edge.first].insert(edge.second);
-            to[edge.second].insert(edge.first);
+    vector<string> makeNewRoutes(const vector<string>& airports, const vector<RouteType>& routes, const string& startingAirport)
+    {
+        RoutesMapType graph;
+        RoutesMapType reversedGraph;
+        unordered_set<string> nodes;
+
+        // Scan the routes, build adjacent lists in graph/reversedGraph.
+        // Also push every airports we ever meet into nodes.
+        for (const auto& edge : routes)
+        {
+            graph[edge.first].insert(edge.second);
+            // Some airports may has 0 outbound, we still need to create it in the graph.
+            graph.emplace(edge.second, unordered_set<string>());
+            reversedGraph[edge.second].insert(edge.first);
+            // Some airports may has 0 inbound, we still need to create it in the reversedGraph.
+            reversedGraph.emplace(edge.first, unordered_set<string>());
             nodes.insert(edge.first);
             nodes.insert(edge.second);
         }
-        unordered_map<int, int> components = kosasrajus(from, to, nodes);
-        unordered_set<int> fromComponents, toComponents;
-        for (auto edge : edges) {
-            fromComponents.insert(components[edge.first]);
-            if (components[edge.first] != components[edge.second]) {
-                toComponents.insert(components[edge.second]);
+
+        // This components stores the component's represent node's name of every node.
+        // For example, ("CDG", "CDG"), ("SIN", "CDG"), means SIN and CDG belong
+        // to the same component - CDG.
+        unordered_map<string, string> components = findAllSsc(graph, reversedGraph, nodes);
+
+        // If a SSC's in-degree is 0, we are unable to reach it.
+        // That means we need to a line to connect to it.
+        // Scan edges and establish the connection relationship between SSC.
+        unordered_map<string, int> inDegreeSsc;
+        for (const auto& edge : routes)
+        {
+            const string& sscOfStart = components[edge.first];
+            const string& sscOfdest = components[edge.second];
+            // Note that we are dealing with SSC, not airport.
+            // If two airports are in the same SSC, skip.
+            if (sscOfStart != sscOfdest)
+            {
+                inDegreeSsc[sscOfdest]++;
+            }
+            // emplace() won't take place if the key already exists.
+            // Ensure every SSC would exist in the inDegreeSsc.
+            inDegreeSsc.emplace(sscOfStart, 0);
+        }
+
+        // Collect all nodes whose in-degree is 0.
+        vector<string> result;
+        for (const auto& pr : inDegreeSsc)
+        {
+            if (pr.second == 0)
+            {
+                result.push_back(pr.first);
             }
         }
-        for (auto node : fromComponents)
-            if (!toComponents.count(node))
-                ans.push_back(node);
-        return ans;
+
+        return result;
     }
-    #endif
 
 
+    //---------------------------------------------------------------------------------------
+    // Test function
+    //---------------------------------------------------------------------------------------
     void TestGraph()
     {
         // 399. Evaluate Division
@@ -446,14 +496,32 @@ namespace Graph
         LeetCodeUtil::PrintVector(resultVS);
 
         // 2115. Find All Possible Recipes from Given Supplies
-        // Input: recipes = ["bread","sandwich"], ingredients = [["yeast","flour"],["bread","meat"]], supplies = ["yeast","flour","meat"]
-        // Output: ["bread", "sandwich"]
+        // Input: recipes = {"bread","sandwich"}, ingredients = {{"yeast","flour"},{"bread","meat"}}, supplies = {"yeast","flour","meat"}
+        // Output: {"bread", "sandwich"}
+        // Input: recipes = {"bread"}, ingredients = {{"yeast","flour"}}, supplies = {"yeast"}
+        // Output: []
         Solution2115 sol2115;
-        vector<string> inputVS = { "bread","sandwich" };
-        inputVVS = { {"yeast","flour"} ,{"bread","meat"} };
-        vector<string> supplies = { "yeast","flour","meat" };
+        vector<string> inputVS = { "bread" };
+        inputVVS = { {"yeast","flour"} };
+        vector<string> supplies = { "yeast" };
         resultVS = sol2115.findAllRecipes(inputVS, inputVVS, supplies);
         cout << "\n2115. Find All Possible Recipes from Given Supplies:" << endl;
         LeetCodeUtil::PrintVector(resultVS);
+
+        // We have 18 airports.
+        vector<string> airports =
+            { "BGI", "CDG", "DEL", "DOH", "DSM", "EWR", "EYW", "HND", "ICN",
+              "JFK", "LGA", "LHR", "ORD", "SAN", "SFO", "SIN", "TLV", "BUD" };
+        vector<pair<string, string>> routes =
+           { {"DSM", "ORD"}, {"ORD", "BGI"}, {"BGI", "LGA"}, {"SIN", "CDG"},
+             {"CDG", "SIN"}, {"CDG", "BUD"}, {"DEL", "DOH"}, {"DEL", "CDG"}, {"TLV", "DEL"},
+             {"EWR", "HND"}, {"HND", "ICN"}, {"HND", "JFK"}, {"ICN", "JFK"}, {"JFK", "LGA"},
+             {"EYW", "LHR"}, {"LHR", "SFO"}, {"SFO", "SAN"}, {"SFO", "DSM"}, {"SAN", "EYW"} };
+        string startingAirport = "LGA";
+
+        resultVS = makeNewRoutes(airports, routes, startingAirport);
+        cout << "\nMake new routes for airlines:" << endl;
+        LeetCodeUtil::PrintVector(resultVS);
+        cout << "\nExpected: [LHR,TLV,EWR]\n";
     }
 }

@@ -447,6 +447,46 @@ namespace Matrix
     };
 
     //---------------------------------------------------------------------------------------
+    // 2013. Detect Squares
+    // 0 <= x, y <= 1000
+    //---------------------------------------------------------------------------------------
+    class DetectSquares
+    {
+    public:
+
+        int countMatrix[1001][1001] = {};
+        vector<pair<int, int>> points;
+
+        DetectSquares()
+        {
+        }
+
+        void add(vector<int> point)
+        {
+            countMatrix[point[0]][point[1]]++;
+            points.emplace_back(point[0], point[1]);
+        }
+
+        int count(vector<int> point)
+        {
+            int x1 = point[0];
+            int y1 = point[1];
+            int result = 0;
+            // Search the point in diagonal.
+            for (auto& [x3, y3] : points)
+            {
+                if (x3 != x1 && abs(x3 - x1) == abs(y3 - y1))
+                {
+                    result += countMatrix[x3][y1] * countMatrix[x1][y3];
+                }
+            }
+
+            return result;
+        }
+    };
+
+
+    //---------------------------------------------------------------------------------------
     // Test function
     //---------------------------------------------------------------------------------------
     void TestMatrix()
@@ -497,5 +537,21 @@ namespace Matrix
         LeetCodeUtil::BuildIntMatrixFromString("[[1, 1, 0], [1, 1, 0], [0, 0, 1]]", &inputMatrix);
         Solution2128 sol2128;
         cout << "\n2128. Remove All Ones With Row and Column Flips: " << sol2128.removeOnes(inputMatrix) << endl;
+
+        // 2013. Detect Squares
+
+        DetectSquares* detectSquares = new DetectSquares();
+        detectSquares->add({ 3, 10 });
+        detectSquares->add({ 11, 2 });
+        detectSquares->add({ 3, 2 });
+        int resultI = detectSquares->count({ 11, 10 }); // return 1. You can choose:
+                                       //   - The first, second, and third points
+        resultI = detectSquares->count({ 14, 8 });  // return 0. The query point cannot form a square with any points in the data structure.
+        detectSquares->add({ 11, 2 });    // Adding duplicate points is allowed.
+        resultI = detectSquares->count({ 11, 10 }); // return 2. You can choose:
+                                       //   - The first, second, and third points
+                                       //   - The first, third, and fourth points
+
+        delete detectSquares;
     }
 }
