@@ -5,6 +5,7 @@
 #include <queue>
 #include <unordered_set>
 #include <set>
+#include <map>
 
 namespace Matrix
 {
@@ -26,18 +27,18 @@ namespace Matrix
         // This is not a simple BFS practice because there might be multiple rotten oranges.
         // All rotten oranges infect adjacent orange at the same time.
         // Therefore, we must do BFS for all rotten oranges at the same time.
-        const int m = grid.size();
-        const int n = grid[0].size();
+        const size_t m = grid.size();
+        const size_t n = grid[0].size();
 
         int result = 0;
         int remainingGoodOrange = 0;
         // Store the orange that is rotten but not yet infect others.
-        queue<pair<int, int>> orangeQueue;
+        queue<pair<size_t, size_t>> orangeQueue;
 
         // Gather fresh and rotten oranges.
-        for (int i = 0; i < m; i++)
+        for (size_t i = 0; i < m; i++)
         {
-            for (int j = 0; j < n; ++j)
+            for (size_t j = 0; j < n; ++j)
             {
                 if (grid[i][j] == 2)
                 {
@@ -52,9 +53,9 @@ namespace Matrix
 
         while (!orangeQueue.empty() && remainingGoodOrange > 0)
         {
-            const int orangeCount = orangeQueue.size();
+            const size_t orangeCount = orangeQueue.size();
             // Use a for-loop to get all rotten oranges start to infect others.
-            for (int k = 0; k < orangeCount; ++k)
+            for (size_t k = 0; k < orangeCount; ++k)
             {
                 auto coord = orangeQueue.front();
                 orangeQueue.pop();
@@ -100,46 +101,6 @@ namespace Matrix
     class Solution417
     {
     public:
-
-        int m = 0;
-        int n = 0;
-
-        void dfs
-        (
-            vector<vector<bool>>& terrains,
-            vector<vector<int>>& heights,
-            int x,
-            int y,
-            int prevHeight
-        )
-        {
-            // We traverse backward from low to high.
-            if (heights[x][y] < prevHeight || terrains[x][y])
-            {
-                return;
-            }
-            // Water can flow to the ocean from this terrain.
-            terrains[x][y] = true;
-
-            const int height = heights[x][y];
-            if (x > 0)
-            {
-                dfs(terrains, heights, x - 1, y, height);
-            }
-            if (x < m - 1)
-            {
-                dfs(terrains, heights, x + 1, y, height);
-            }
-            if (y > 0)
-            {
-                dfs(terrains, heights, x, y - 1, height);
-            }
-            if (y < n - 1)
-            {
-                dfs(terrains, heights, x, y + 1, height);
-            }
-        }
-
         vector<vector<int>> pacificAtlantic(vector<vector<int>>& heights)
         {
             // Idea: Do DFS from the edge and mark a terrain whether it can direct water
@@ -182,6 +143,47 @@ namespace Matrix
 
             return result;
         }
+
+    private:
+
+        void dfs
+            (
+            vector<vector<bool>>& terrains,
+            vector<vector<int>>& heights,
+            size_t x,
+            size_t y,
+            int prevHeight
+            )
+        {
+            // We traverse backward from low to high.
+            if (heights[x][y] < prevHeight || terrains[x][y])
+            {
+                return;
+            }
+            // Water can flow to the ocean from this terrain.
+            terrains[x][y] = true;
+
+            const int height = heights[x][y];
+            if (x > 0)
+            {
+                dfs(terrains, heights, x - 1, y, height);
+            }
+            if (x < m - 1)
+            {
+                dfs(terrains, heights, x + 1, y, height);
+            }
+            if (y > 0)
+            {
+                dfs(terrains, heights, x, y - 1, height);
+            }
+            if (y < n - 1)
+            {
+                dfs(terrains, heights, x, y + 1, height);
+            }
+        }
+
+        size_t m = 0;
+        size_t n = 0;
     };
 
     //---------------------------------------------------------------------------------------
@@ -195,26 +197,26 @@ namespace Matrix
         // in the group. So, n - count of group is the answer of this question.
         int removeStones(vector<vector<int>>& stones)
         {
-            const int n = stones.size();
+            const size_t n = stones.size();
 
-            vector<int> group(n);
+            vector<size_t> group(n);
             // Initial the group. Let every stone be in its own group.
-            for (int i = 0; i < n; ++i)
+            for (size_t i = 0; i < n; ++i)
             {
                 group[i] = i;
             }
 
             // Double loops to compare any two coordinates.
-            for (int i = 0; i < n; ++i)
+            for (size_t i = 0; i < n; ++i)
             {
-                for (int j = i + 1; j < n; ++j)
+                for (size_t j = i + 1; j < n; ++j)
                 {
                     // x-coordinate is equal or y-coordinate is equal.
                     if (stones[i][0] == stones[j][0] || stones[i][1] == stones[j][1])
                     {
                         // Use the index in stones as the stone's Id.
-                        int root1 = getRoot(group, i);
-                        int root2 = getRoot(group, j);
+                        auto root1 = getRoot(group, i);
+                        auto root2 = getRoot(group, j);
                         if (root1 != root2)
                         {
                             group[root2] = root1;
@@ -223,8 +225,8 @@ namespace Matrix
                 }
             }
 
-            int groupCount = 0;
-            for (int i = 0; i < n; ++i)
+            size_t groupCount = 0;
+            for (size_t i = 0; i < n; ++i)
             {
                 // Locate the root. The root count is equal to the group count.
                 if (group[i] == i)
@@ -233,10 +235,10 @@ namespace Matrix
                 }
             }
 
-            return n - groupCount;
+            return static_cast<int>( n - groupCount );
         }
 
-        int getRoot(vector<int>& group, int stone)
+        size_t getRoot(vector<size_t>& group, size_t stone)
         {
             while (group[stone] != stone)
             {
@@ -375,15 +377,15 @@ namespace Matrix
                 // Think! It's easy to determine this is the place we should increment it.
                 result++;
                 // Similar to level-order traversal, we need a for-loop here to fetch all.
-                const int count = remainingStates.size();
-                for (int i = 0; i < count; ++i)
+                const auto count = remainingStates.size();
+                for (size_t i = 0; i < count; ++i)
                 {
                     const int x = remainingStates.front().x;
                     const int y = remainingStates.front().y;
                     const int power = remainingStates.front().power;
                     remainingStates.pop();
 
-                    for (int j = 0; j < m_dirs.size(); ++j)
+                    for (size_t j = 0; j < m_dirs.size(); ++j)
                     {
                         int newX = x + m_dirs[j].first;
                         int newY = y + m_dirs[j].second;
@@ -485,13 +487,330 @@ namespace Matrix
         }
     };
 
+    //---------------------------------------------------------------------------------------
+    // 329. Longest Increasing Path in a Matrix (Hard)
+    // Topic: DFS/BFS, DP, Topological sort, memorization.
+    //---------------------------------------------------------------------------------------
+    class Solution329
+    {
+    public:
+        int longestIncreasingPath(vector<vector<int>>& matrix)
+        {
+            // Idea:
+            // Use DFS. We can only move to the cell having greater number.
+            // Normally, we need to mark a cell 'visited', so we won't go to it. In this case
+            // , we could use dp[i][j] to note the longest path from cell(i, j).
+            // If we encounter a cell having dp[i][j] > 0, we should skip it.
+            // * Need to accumulate the length we traveled.
+            // * Need to track the maximum of dp[i][j]. It is our answer.
+            m = matrix.size();
+            n = matrix[0].size();
+            vector<vector<int>> dp(m, vector<int>(n, -1));
+            int result = -1;
+
+            for (size_t i = 0; i < m; ++i)
+            {
+                for (size_t j = 0; j < n; ++j)
+                {
+                    int len = findPathDfs(matrix, dp, i, j);
+                    result = max(result, len);
+                }
+            }
+
+            return result;
+        }
+
+    private:
+
+        int findPathDfs(vector<vector<int>>& matrix, vector<vector<int>>& dp, size_t x, size_t y)
+        {
+            if (dp[x][y] != -1)
+            {
+                // This cell has been visited, return its value directly.
+                return dp[x][y];
+            }
+
+            int len = 1; // Initially, a cell can visit itself.
+            const int curr = matrix[x][y];
+            // Do DFS for nearby accessible cells.
+            // We don't which direction would give us the longest path, so use max().
+            if (x > 0 && curr < matrix[x - 1][y])
+            {
+                len = max(len, 1 + findPathDfs(matrix, dp, x - 1, y));
+            }
+            if (y > 0 && curr < matrix[x][y - 1])
+            {
+                len = max(len, 1 + findPathDfs(matrix, dp, x, y - 1));
+            }
+            if (x < m - 1 && curr < matrix[x + 1][y])
+            {
+                len = max(len, 1 + findPathDfs(matrix, dp, x + 1, y));
+            }
+            if (y < n - 1 && curr < matrix[x][y + 1])
+            {
+                len = max(len, 1 + findPathDfs(matrix, dp, x, y + 1));
+            }
+            // Update dp.
+            dp[x][y] = len;
+
+            return len;
+        }
+
+        size_t m = 0;
+        size_t n = 0;
+    };
+
+    //---------------------------------------------------------------------------------------
+    // 1284. Minimum Number of Flips to Convert Binary Matrix to Zero Matrix (Hard)
+    //---------------------------------------------------------------------------------------
+    class Solution1284
+    {
+    public:
+        int minFlips(vector<vector<int>>& mat)
+        {
+            // Idea:
+            // This is hard... No smart tricky to determine the answer, so we must just try
+            // every steps.
+            // Unlike most maze question, the goal is not to get a certain position.
+            // The goal is a zero matrix. So, the entire matrix must be considered as a
+            // 'state'. We need to figure out if we can reach the state.
+            // Pay attention to the following facts:
+            // * The matrix only have 0 or 1, and it is not big (3x3), so it can be encoded
+            //   into a int. We only need at most 9 bits to store the 'state'.
+            // * BFS is more suitable in this case.
+            int initialState = 0;
+            const size_t m = mat.size();
+            const size_t n = mat[0].size();
+
+            for (int i = 0; i < m; i++)
+            {
+                for (int j = 0; j < n; j++)
+                {
+                    initialState |= mat[i][j] ? 1 << ( i * n + j ) : 0;
+                }
+            }
+
+            queue<int> states({ initialState });
+            unordered_set<int> seenStates({ initialState });
+            int result = 0;
+            while (!states.empty()) // while there is remaining state to be processed.
+            {
+                const size_t len = states.size();
+                for (size_t s = 0; s < len; ++s)
+                {
+                    const int currState = states.front();
+                    states.pop();
+                    if (currState == 0) // Solved!
+                    {
+                        return result;
+                    }
+                    // Understand this state, try every cells.
+                    for (size_t i = 0; i < m; i++)
+                    {
+                        for (size_t j = 0; j < n; j++)
+                        {
+                            int newState = currState;
+                            // Flip this cell, update the nearby cells, so we have a new state.
+                            for (const auto& dir : directions)
+                            {
+                                size_t newX = i + dir.first;
+                                size_t newY = j + dir.second;
+                                if (newX >= 0 && newX < m && newY >= 0 && newY < n)
+                                {
+                                    // To flip, we can use XOR.
+                                    newState ^= 1 << ( newX * n + newY );
+                                }
+                            }
+
+                            if (seenStates.count(newState) == 0)
+                            {
+                                seenStates.insert(newState);
+                                states.push(newState);
+                            }
+                        }
+                    }
+                }
+                result++;
+            }
+
+            return -1;
+        }
+
+    private:
+        // Unlike the usual matrix traversal question, there is {0, 0}, meaning flipping
+        // the current cell.
+        vector<pair<int, int>> directions = { {0, 0}, {1, 0}, {0, 1}, {-1, 0}, {0, -1} };
+    };
+
+    //---------------------------------------------------------------------------------------
+    // 939. Minimum Area Rectangle
+    // Topic: hash table.
+    //
+    //---------------------------------------------------------------------------------------
+    class Solution939
+    {
+    public:
+        // The following implementation iterates the points many times. It is O(n^2).
+        int minAreaRect(vector<vector<int>>& points)
+        {
+            // To find a rectangle, we should find a diagonal point first. And then, check
+            // whether they can form a rectangle.
+            sort(points.begin(), points.end(), [](const vector<int>& left, const vector<int>& right)
+                {
+                    return left[0] < right[0];
+                });
+
+            // <coordinate x axis, <coordinate y at this x coordinate> >
+            map<int, unordered_set<int>> xAxisMap;
+            for (const auto& point : points)
+            {
+                xAxisMap[point[0]].insert(point[1]);
+            }
+
+            int result = INT_MAX;
+            const size_t length = points.size();
+            for (size_t i = 0; i < length; i++)
+            {
+                int lastX = INT_MAX;
+                for (size_t j = i + 1; j < length; j++)
+                {
+                    // The points has been sorted, so if we meet a bigger X, the next area
+                    // (if there is one) must be greater, so we can stop now.
+                    const int x2 = points[j][0];
+                    if (x2 > lastX)
+                    {
+                        break;
+                    }
+
+                    const int x1 = points[i][0];
+                    const int y1 = points[i][1];
+                    const int y2 = points[j][1];
+                    // Check if two are in diagonal.
+                    if (x1 != x2 && y1 != y2)
+                    {
+                        // Check there are two other points that make a rectangle.
+                        if (xAxisMap[x1].count(y2) && xAxisMap[x2].count(y1))
+                        {
+                            int area = abs(( x2 - x1 ) * ( y2 - y1 ));
+                            result = min(result, area);
+                            lastX = x2;
+                        }
+                    }
+                }
+            }
+
+            return result == INT_MAX ? 0 : result;
+        }
+    };
+
+    //---------------------------------------------------------------------------------------
+    // 778. Swim in Rising Water (Hard)
+    // Topic: DFS, BFS, Priority queue, BIS, Union Find
+    //---------------------------------------------------------------------------------------
+    // I can devise two possible solutions:
+    // 1. Use BFS + priority queue.
+    // 2. Use BFS/DFS + binary search. Because the question set the upper bound of the cell
+    //    to n^2. We can call binary search between 0 ~ n^2. Try if we can reach by not
+    //    exceeding that elevation. (TODO)
+    class Solution778
+    {
+    public:
+
+        // Use BFS + priority queue.
+        int swimInWater(vector<vector<int>>& grid)
+        {
+            m = grid.size();
+            n = grid[0].size();
+            // Idea: Do special BFS - always pick the cell having smallest elevation.
+            using Cell = pair<int, int>; // <elevation, compiled coordinate integer: x * n + y>.
+            // The priority_queue by default is max heap. If we want to turn it into a
+            // min heap, we must use > for the comparison.
+            auto comp = [](const Cell& left, const Cell& right)
+            {
+                return left.first > right.first;
+            };
+            priority_queue<Cell, deque<Cell>, decltype( comp )> cellQueue(comp);
+
+            // Store the compiled coordinate integer: x * n + y.
+            unordered_set<int> visited;
+            visited.insert(0);
+
+            // Start from the left-top corner.
+            cellQueue.emplace(Cell( grid[0][0], 0 ));
+
+            int result = INT_MIN;
+            while (!cellQueue.empty())
+            {
+                const int x = static_cast<int>( cellQueue.top().second / n );
+                const int y = static_cast<int>( cellQueue.top().second % n );
+                cellQueue.pop();
+
+                result = max(result, grid[x][y]);
+                if (x == m - 1 && y == n - 1)
+                {
+                    return result;
+                }
+
+                // Push nearby cells into queue.
+                vector<pair<int, int>> dirs = { {1, 0}, {0, 1}, {-1, 0}, {0, -1} };
+                for (size_t i = 0; i < dirs.size(); ++i)
+                {
+                    const int newX = x + dirs[i].first;
+                    const int newY = y + dirs[i].second;
+                    int compiled = static_cast<int>( newX * n + newY );
+                    if (newX >= 0 && newX < m && newY >= 0 && newY < n && visited.count(compiled) == 0)
+                    {
+                        cellQueue.emplace(Cell(grid[newX][newY], compiled));
+                        visited.insert(compiled);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+    private:
+        size_t m = 0;
+        size_t n = 0;
+    };
+
+    //---------------------------------------------------------------------------------------
+    // 419. Battleships in a Board
+    //
+    // Follow up: Could you do it in one-pass, using only O(1) extra memory and without
+    // modifying the values board?
+    //---------------------------------------------------------------------------------------
+    class Solution419
+    {
+    public:
+        int countBattleships(vector<vector<char>>& board)
+        {
+            // Idea: The head of battleship's left and top cell can not be 'X'.
+            // It could be the matrix boundary or '.'.
+
+            int count = 0;
+            for (int i = 0; i < board.size(); i++)
+            {
+                for (int j = 0; j < board[0].size(); ++j)
+                {
+                    if (board[i][j] == 'X' && ( i == 0 || board[i - 1][j] == '.' ) && ( j == 0 ||
+                        board[i][j - 1] == '.' ))
+                    {
+                        count++;
+                    }
+                }
+            }
+
+            return count;
+        }
+    };
 
     //---------------------------------------------------------------------------------------
     // Test function
     //---------------------------------------------------------------------------------------
     void TestMatrix()
     {
-        // 994. Rotting Oranges (Medium)
+        // 994. Rotting Oranges
         // Input: grid = [[2,1,1],[1,1,0],[0,1,1]]
         // Output: 4
         // Input: grid = [[2,1,1],[0,1,1],[1,0,1]]
@@ -553,5 +872,40 @@ namespace Matrix
                                        //   - The first, third, and fourth points
 
         delete detectSquares;
+
+        // 329. Longest Increasing Path in a Matrix (Hard)
+        Solution329 sol329;
+        LeetCodeUtil::BuildIntMatrixFromString("[[3,4,5],[3,2,6],[2,2,1]]", &inputMatrix);
+        cout << "\n329. Longest Increasing Path in a Matrix: " << sol329.longestIncreasingPath(inputMatrix) << endl;
+
+        // 1284. Minimum Number of Flips to Convert Binary Matrix to Zero Matrix (Hard)
+        Solution1284 sol1284;
+        LeetCodeUtil::BuildIntMatrixFromString("[[0,0],[0,1]]", &inputMatrix);
+        cout << "\n1284. Minimum Number of Flips to Convert Binary Matrix to Zero Matrix (Hard): " << sol1284.minFlips(inputMatrix) << endl;
+
+        // 939. Minimum Area Rectangle
+        // Input: points = [[1,1],[1,3],[3,1],[3,3],[2,2]]
+        // Output: 4
+        // Input: points = [[1,1],[1,3],[3,1],[3,3],[4,1],[4,3]]
+        // Output: 2
+        // Input: points = [[3,2],[3,1],[4,4],[1,1],[4,3],[0,3],[0,2],[4,0]]
+        // Output: 0
+        Solution939 sol939;
+        LeetCodeUtil::BuildIntMatrixFromString("[[1,1],[1,3],[3,1],[3,3],[4,1],[4,3]]", &inputMatrix);
+        cout << "\n939. Minimum Area Rectangle: " << sol939.minAreaRect(inputMatrix) << endl;
+
+        // 778. Swim in Rising Water (Hard)
+        // Input: grid = [[0,1,2,3,4],[24,23,22,21,5],[12,13,14,15,16],[11,17,18,19,20],[10,9,8,7,6]]
+        // Output: 16
+        Solution778 sol778;
+        LeetCodeUtil::BuildIntMatrixFromString("[[0,1,2,3,4],[24,23,22,21,5],[12,13,14,15,16],[11,17,18,19,20],[10,9,8,7,6]]", &inputMatrix);
+        cout << "\n778. Swim in Rising Water: " << sol778.swimInWater(inputMatrix) << endl;
+
+        // 419. Battleships in a Board
+        // Input: board = [["X",".",".","X"],[".",".",".","X"],[".",".",".","X"]]
+        // Output: 2
+        Solution419 sol419;
+        vector<vector<char>> inputVVC = { {'X','.','.','X' }, { '.', '.', '.', 'X' }, { '.', '.', '.', 'X' } };
+        cout << "\n419. Battleships in a Board: " << sol419.countBattleships(inputVVC) << endl;
     }
 }

@@ -18,7 +18,7 @@ public:
     int racecar(int target)
     {
         // AAA: 0 -> 1 -> 3 -> 7 -> 15
-        //           1    2    4     4
+        //           1    2    3     4
         //       2^1 - 1           2^4 -1
         // Idea:
         // We have 3 types of maneuver to reach the target.
@@ -35,19 +35,6 @@ public:
         // dp[i] = countA + 1 + countB + 1 + dp[i - (j - k)] where countB is the count accelerate backward.
         // dp[i] = countA + 1 + dp[j - i] where j is the position we reached by countA, j > i. This is type 3.
 
-        // Firstly, deal with the lucky case - type 1.
-        int j = 0;
-        int countA = 0;
-        while (j <= target)
-        {
-            if (j == target)
-            {
-                return countA;
-            }
-            countA++;
-            j = ( 1 << countA ) - 1;
-        }
-
         vector<int> dp(target + 1, INT_MAX);
         dp[0] = 0;
         dp[1] = 1;
@@ -56,8 +43,8 @@ public:
         for (int i = 2; i <= target; ++i)
         {
             // Build dp table from beginning.
-            j = 1; // The position we reach by keep accelerating.
-            countA = 1;
+            int j = 1; // The position we reach by keep accelerating.
+            int countA = 1;
             int upperBound = 0;
             for (; j < i; j = upperBound)
             {
@@ -69,7 +56,7 @@ public:
                 for (int k = 0; k < j; k = lowerBound)
                 {
                     // 0......(j-k)....j.....i....
-                    dp[i] = min(dp[i], countA + 1 + countB + 1 + dp[i - (j - k)]);
+                    dp[i] = min(dp[i], countA + 1 + countB + 1 + dp[i - ( j - k )]);
                     countB++;
                     lowerBound = ( 1 << countB ) - 1;
                 }
@@ -77,7 +64,8 @@ public:
                 upperBound = ( 1 << countA ) - 1;
             }
 
-            // Case type 2. i < j. Reverse one and handle the subproblem.
+            // Case type 1: j == i. It's just countA. 
+            // Case type 3: i < j. Reverse one and handle the subproblem.
             int candidate = j == i ? countA : countA + 1 + dp[j - i];
             dp[i] = min(dp[i], candidate);
         }
@@ -307,6 +295,140 @@ public:
     }
 };
 
+//---------------------------------------------------------------------------------------
+// 552. Student Attendance Record II (Hard)
+// Topic: DP
+//---------------------------------------------------------------------------------------
+
+int checkRecord(int n)
+{
+    // P[i] : The count of eligible record ends with P.
+    // L[i] : The count of eligible record ends with L.
+    // A[i] : The count of eligible record ends with A.
+    // Answer: P[n-1] + L[n-1] + A[n-1]
+    // State transition equation:
+    // * P[i] = A[i-1] + P[i-1] + L[i-1]
+    // * L[i] = A[i-1] + P[i-1] + A[i-2] + P[i-2]
+    // A is more complex.
+    // PnoA: The count of eligible record ends with P and there is no any A within.
+    // LnoA: The count of eligible record ends with L and there is no any A within.
+    // A[i] = PnoA[i-1] + LnoA[i-1]
+    // PnoA[i] = PnoA[i - 1] + LnoA[i - 1]
+    // LnoA[i] = PnoA[i - 1] + PnoA[i - 2]
+    // We can infer:
+    // A[i] = A[i-1] + LnoA[i-1] = A[i-1] + PnoA[i - 2] + PnoA[i - 3]
+    // *                         = A[i-1] + A[i-2] + A[i-3]
+
+    // Now we need to setup initial values of the arrays.
+    const int limit = 1e9 + 7;
+    vector<int> P(n);
+    vector<int> L(n);
+    vector<int> A(n);
+    P[0] = 1;
+    L[0] = 1;
+    A[0] = 1;
+    if (n >= 2)
+    {
+        L[1] = 3; // PL, LL, AL
+        A[1] = 2; // PA, LA
+    }
+    if (n >= 3)
+    {
+        A[2] = 4; // PLA, LPA, LLA, PPA
+    }
+
+    for (int i = 1; i < n; ++i)
+    {
+        P[i] = (( A[i - 1] + P[i - 1] ) % limit + L[i - 1] ) % limit;
+        if (i >= 2)
+        {
+            L[i] = ( ( A[i - 1] + P[i - 1] ) % limit + ( A[i - 2] + P[i - 2] ) % limit ) % limit;
+        }
+        if (i >= 3)
+        {
+            A[i] = ( ( A[i - 1] + A[i - 2] ) % limit + A[i - 3] ) % limit;
+        }
+    }
+
+    int result = ( ( P[n - 1] + L[n - 1] ) % limit +  A[n - 1] ) % limit;
+
+    return result;
+}
+//---------------------------------------------------------------------------------------
+// 1240. Tiling a Rectangle with the Fewest Squares (Hard)
+// Given a rectangle of size n x m, return the minimum number of integer-sided squares
+// that tile the rectangle.
+//---------------------------------------------------------------------------------------
+class Solution1240
+{
+public:
+    // Idea: Put one rectangle on the bottom-left corner, divide the remaining area to
+    // two smaller rectangles, and solve the subproblems. There are two ways to divide,
+    // so we need two recursions.
+    // Observe the 3rd example, we also need to put one rectangle on the bottom-left and
+    // one rectangle on the top-right and their sum of height is greater than n. And then
+    // , divide the remaining area and solve the subproblems.
+    int tilingRectangle(int n, int m)
+    {
+        if (n > m) return tilingRectangle(m, n);
+
+        mWidth = m;
+        mHeight = n;
+
+        // To avoid calculating the same rectangles, we should save the results of them.
+        // We allocate one extra space because it make the code easier to understand.
+        vector<vector<int>> memo(n + 1, vector<int>(m + 1, 0));
+
+        return helper(n, m, memo);
+    }
+
+private:
+
+    int helper(int n, int m, vector<vector<int>>& memo)
+    {
+        if (n == 0 || m == 0) return 0;
+        if (n > m) return helper(m, n, memo);
+        if (n == m) return 1;
+        if (n == 1) return m;
+        if (memo[n][m] > 0) return memo[n][m];
+
+        // Dividing...
+        int result = INT_MAX;
+
+        for (int i = 1; i <= n; i++)
+        {
+            // Put a rectangle (i X i) on the bottom-left.
+            // Divide method 1:
+            int tempResult = 1 + helper(n - i, m, memo) + helper(i, m - i, memo);
+            result = min(result, tempResult);
+            // Divide method 2:
+            tempResult = 1 + helper(n - i, i, memo) + helper(n, m - i, memo);
+            result = min(result, tempResult);
+
+            // Put a rectangle (i X i) on the bottom-left and a rectangle (j X j) on the top-right.
+            for (int j = n - i + 1; j < n && j < m - i; ++j)
+            {
+                // There are 3 sub-areas.
+                tempResult = 2 + helper(n - i, m - j, memo) +  // left-top
+                                 helper(i + j - n, m - i - j, memo) +  // The smallest in the middle.
+                                 helper(n - j, m - i, memo); // bottom-right
+                result = min(result, tempResult);
+            }
+        }
+        memo[n][m] = result;
+
+        return result;
+    }
+
+    // Given a rectangle of size n x m
+    int mWidth = 0;
+    int mHeight = 0;
+};
+
+
+//---------------------------------------------------------------------------------------
+// Main function
+//---------------------------------------------------------------------------------------
 int main()
 {
     std::cout << "DynamicProgramming!\n";
@@ -354,4 +476,13 @@ int main()
     int sessionTime = 12;
     cout << "\n1986. Minimum Number of Work Sessions to Finish the Tasks: " << sol1986.minSessions(inputVI, sessionTime) << endl;
 
+    // 552. Student Attendance Record II (Hard)
+    // Input: n = 10101
+    cout << "\n552. Student Attendance Record II: " << checkRecord(10101) << endl;
+
+    // 1240. Tiling a Rectangle with the Fewest Squares (Hard)
+    // Input: n = 11, m = 13
+    // Output: 6
+    Solution1240 sol1240;
+    cout << "\n1240. Tiling a Rectangle with the Fewest Squares: " << sol1240.tilingRectangle(5, 8) << endl;
 }

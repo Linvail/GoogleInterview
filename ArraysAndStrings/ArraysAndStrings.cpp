@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <map>
 #include <set>
+#include <unordered_set>
 
 #include "LeetCodeUtil.h"
 
@@ -474,6 +475,289 @@ private:
     int m_maxWidth = 0;
 };
 
+//---------------------------------------------------------------------------------------
+// 2135. Count Words Obtained After Adding a Letter
+//---------------------------------------------------------------------------------------
+
+class Solution2135
+{
+public:
+
+    // The time constraint of Leetcode is very strict. O(n^2) won't work.
+    // Need to use hash table. For each startword, we add 1 letter to it and insert it
+    // to the hash table.
+    int wordCount(vector<string>& startWords, vector<string>& targetWords)
+    {
+        set<int> startWordSet;
+        // Insert all startWords.
+        for (const auto& start : startWords)
+        {
+            const size_t lenS = start.size();
+            int original = convertToInt(start);
+
+            for (int i = 0; i < 26; ++i)
+            {
+                if (original & (1 << i))
+                {
+                    // This letter already exists.
+                    continue;
+                }
+                int variant = original | ( 1 << i );
+                startWordSet.insert(variant);
+            }
+        }
+
+        int result = 0;
+        for (const auto& target : targetWords)
+        {
+            int original = convertToInt(target);
+            if (startWordSet.count(original))
+            {
+                result++;
+            }
+        }
+
+        return result;
+    }
+
+private:
+    int convertToInt(const string& input)
+    {
+        const size_t lenS = input.size();
+        int original = 0;
+
+        for (int i = 0; i < lenS; ++i)
+        {
+            original |= 1 << ( input[i] - 'a' );
+        }
+
+        return original;
+    }
+};
+
+//---------------------------------------------------------------------------------------
+// 1554. Strings Differ by One Character
+// Return true if there are 2 strings that only differ by 1 character in the same index,
+// otherwise return false.
+// Heed 'same index'.
+//
+//
+// This is a little similar to 2135, in which we add extra items into the hash table for
+// further look-up.
+// We can use similar approach to solve this. We can add all possible strings into the
+// hash table.
+//
+// Follow up: Could you solve this problem in O(n * m) where n is the length of dict and
+// m is the length of each string.
+//---------------------------------------------------------------------------------------
+class Solution1554
+{
+private:
+
+    bool looseCompare(const string& str1, const string& str2, size_t m)
+    {
+        int missed = 0;
+        for (size_t i = 0; i < m; ++i)
+        {
+            if (str1[i] != str2[i])
+            {
+                missed++;
+                if (missed > 1)
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    bool compareByLoose(vector<string>& dict, size_t n, size_t m)
+    {
+        for (size_t i = 0; i < n; ++i)
+        {
+            for (size_t j = i + 1; j < n; ++j)
+            {
+                if (looseCompare(dict[i], dict[j], m))
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    bool compareByHash(vector<string>& dict, size_t n, size_t m)
+    {
+        // For each index i (0~m), do:
+        // Take 1st, erase char at i and concatenate two substrings and form one new string.
+        // (for short, I can this problem as making the shorter sting.)
+        // Add it into hash table.
+        // Take 2nd, make the shorter sting. Search it in the hash table, if found, return
+        // true, if not, insert it.
+        // After iterated all i. Return false in the end of function.
+        // The above solution causes TLE. We need to optimize.
+        unordered_set<string> dictHash;
+
+        for (size_t i = 0; i < m; ++i)
+        {
+            for (int j = 0; j < n; j++)
+            {
+                string& tmpRef = dict[j];
+                const char c = tmpRef[i];
+                tmpRef[i] = '*';
+                if (j != 0 && dictHash.count(tmpRef) > 0)
+                {
+                    return true;
+                }
+                dictHash.insert(tmpRef);
+                // Rollback.
+                tmpRef[i] = c;
+            }
+            dictHash.clear();
+        }
+
+        return false;
+    }
+
+public:
+    bool differByOne(vector<string>& dict)
+    {
+        const size_t n = dict.size();
+        if (n < 2)
+        {
+            return false;
+        }
+
+        const size_t m = dict[0].size();
+        if (m < 2)
+        {
+            return false;
+        }
+
+        if (m > 32)
+        {
+            return compareByLoose(dict, n, m);
+        }
+        else
+        {
+            return compareByHash(dict, n, m);
+        }
+    }
+};
+
+//---------------------------------------------------------------------------------------
+// 2007. Find Original Array From Doubled Array
+//---------------------------------------------------------------------------------------
+vector<int> findOriginalArray(vector<int>& changed)
+{
+    vector<int> result;
+    if (changed.size() & 0b1)
+    {
+        // The size of input must be even.
+        return result;
+    }
+
+    // We need to start from the smallest number.
+    sort(changed.begin(), changed.end());
+
+    // { 3 4 6 6 8 12 }
+    //   ^   ^ ^   ^      We might have two 6.
+    // Build frequency map.
+    map<int, size_t> freqMap;
+    for (const auto& num : changed)
+    {
+        freqMap[num]++;
+    }
+
+    size_t expectedSize = changed.size() >> 1;
+    for (int i = 0; i < changed.size() && result.size() < expectedSize; i++)
+    {
+        // If we have two 3, we must have 4+ 6.
+        if ((freqMap[changed[i]] > freqMap[changed[i] << 1]) || changed[i] == 0 && freqMap[0] & 0b1)
+        {
+            return {};
+        }
+        else if (freqMap[changed[i]] != 0) // 0 means it's a doubled number.
+        {
+            freqMap[changed[i]]--;  // Consider the case: [0,0]
+            freqMap[changed[i] << 1]--; // Remove a doubled number.
+            result.push_back(changed[i]);
+        }
+    }
+
+    return result;
+}
+
+//---------------------------------------------------------------------------------------
+// 1423. Maximum Points You Can Obtain from Cards
+//---------------------------------------------------------------------------------------
+int maxScore(vector<int>& cardPoints, int k)
+{
+    const size_t len = cardPoints.size();
+    int sum = 0;
+    // Assume we just pick k cards on the left.
+    for (int i = 0; i < k; ++i) sum += cardPoints[i];
+
+    int result = sum;
+    // Image a sliding window starting from k ~ len - 1. We move window to the left until
+    // reach the head.
+    int i = k -1;
+    int j = static_cast<int>( len - 1 );
+    for (; i >= 0 && j >= 0; --i, --j)
+    {
+        sum += ( cardPoints[j] - cardPoints[i] );
+        result = max(result, sum);
+    }
+
+    return result;
+}
+
+//---------------------------------------------------------------------------------------
+// 792. Number of Matching Subsequences
+//---------------------------------------------------------------------------------------
+int numMatchingSubseq(string s, vector<string>& words)
+{
+    // We need a way to check whether a word is a subsequence of another string.
+    // Brute force will cause TLE.
+
+    // One solution is to build a mapping of char -> indexes.
+    // For example, 'a' - > {1, 3} for string: baba
+    vector<vector<int>> charIndexMap(26);
+
+    for (int i = 0; i < static_cast<int>(s.size()); ++i)
+    {
+        charIndexMap[s[i] - 'a'].push_back(i);
+    }
+
+    int count = 0;
+    for (const auto& word : words)
+    {
+        int prevIndex = -1;
+        bool matched = true;
+        // Check if word is a subsequence of the input string.
+        for (int i = 0; i < static_cast<int>( word.size() ); i++)
+        {
+            const vector<int>& indexes = charIndexMap[word[i] - 'a'];
+            // Find the index that is greater than prevIndex.
+            auto iter = std::upper_bound(indexes.begin(), indexes.end(), prevIndex);
+            if (iter == indexes.end())
+            {
+                matched = false;
+                break;
+            }
+            // Update the prevIndex, so the next char must be found after this position.
+            prevIndex = *iter;
+        }
+
+        if (matched)
+        {
+            count++;
+        }
+    }
+
+    return count;
+}
+
 
 //---------------------------------------------------------------------------------------
 // Main
@@ -557,4 +841,43 @@ int main()
     cout << "\n68. Text Justification (Hard): " << endl;
     LeetCodeUtil::PrintVector(resultVS);
 
+    // 2135. Count Words Obtained After Adding a Letter
+    // Input: startWords = ["ant","act","tack"], targetWords = ["tack","act","acti"]
+    // Output: 2
+    // ["g", "vf", "ylpuk", "nyf", "gdj", "j", "fyqzg", "sizec"]
+    // ["r", "am", "jg", "umhjo", "fov", "lujy", "b", "uz", "y"]
+    sources = { "g", "vf", "ylpuk", "nyf", "gdj", "j", "fyqzg", "sizec" };
+    vector<string> target = { "r", "am", "jg", "umhjo", "fov", "lujy", "b", "uz", "y" };
+    Solution2135 sol2135;
+    cout << "\n2135. Count Words Obtained After Adding a Letter: " << sol2135.wordCount(sources, target) << endl;
+
+    // 1554. Strings Differ by One Character
+    // Input: dict = ["abcd","acbd", "aacd"]
+    // Output: true
+    Solution1554 sol1554;
+    sources = { "abcd","acbd", "aacd" };
+    cout << "\n1554. Strings Differ by One Character: " << sol1554.differByOne(sources) << endl;
+
+    // 2007. Find Original Array From Doubled Array
+    // Input: changed = [1,3,4,2,6,8]
+    // Output: [1, 3, 4]
+    // Input: changed = [0,0,0,0]
+    // Output: [0,0]
+    intV = { 5, 0 };
+    resultVI = findOriginalArray(intV);
+    cout << "\n2007. Find Original Array From Doubled Array: " << endl;
+    LeetCodeUtil::PrintVector(resultVI);
+
+    // 1423. Maximum Points You Can Obtain from Cards
+    // Input: cardPoints = [1, 2, 3, 4, 5, 6, 1], k = 3
+    // Output : 12
+    vector<int> inputVI = { 1, 2, 3, 4, 5, 6, 1 };
+    cout << "\n1423. Maximum Points You Can Obtain from Cards: " << maxScore(inputVI, 3) <<  endl;
+
+    // 792. Number of Matching Subsequences
+    // Input: s = "abcde", words = ["a", "bb", "acd", "ace"]
+    // Output : 3
+    inputStr = "abcde";
+    vector<string> inputVS = { "a", "bb", "acd", "ace" };
+    cout << "\n792. Number of Matching Subsequences: " << numMatchingSubseq(inputStr, inputVS) << endl;
 }
