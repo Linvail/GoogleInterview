@@ -758,6 +758,48 @@ int numMatchingSubseq(string s, vector<string>& words)
     return count;
 }
 
+//---------------------------------------------------------------------------------------
+// 1996. The Number of Weak Characters in the Game (Medium)
+//---------------------------------------------------------------------------------------
+class Solution1996
+{
+public:
+    int numberOfWeakCharacters(vector<vector<int>>& properties)
+    {
+        const int len = properties.size();
+        // Sort by attack in ascending order.
+        std::sort(properties.begin(), properties.end(),
+            [](const auto& left, const auto& right)
+            {
+                return left[0] < right[0];
+            });
+
+        int result = 0;
+        int preMaxDef = INT_MIN;
+        int maxDef = INT_MIN;
+        int prevAtk = properties[len - 1][0];
+
+        // Assume every attack power is unique.
+        for (int i = len - 1; i >= 0; i--)
+        {
+            if (prevAtk != properties[i][0] && properties[i][1] < preMaxDef)
+            {
+                result++;
+            }
+            maxDef = max(maxDef, properties[i][1]);
+
+            if (i > 0 && properties[i - 1][0] != properties[i][0])
+            {
+                prevAtk = properties[i][0];
+                preMaxDef = maxDef;
+            }
+        }
+
+        return result;
+    }
+};
+
+
 
 //---------------------------------------------------------------------------------------
 // Main
@@ -880,4 +922,15 @@ int main()
     inputStr = "abcde";
     vector<string> inputVS = { "a", "bb", "acd", "ace" };
     cout << "\n792. Number of Matching Subsequences: " << numMatchingSubseq(inputStr, inputVS) << endl;
+
+    // 1996. The Number of Weak Characters in the Game
+    // Input: properties = [[2,2],[3,3]]
+    // Output: 1
+    // Input: properties = [[1,1],[2,1],[2,2],[1,2]]
+    // Output: 1
+    // Input: properties =  [[7, 9], [10, 7], [6, 9], [10, 4], [7, 5], [7, 10]]
+    // Output: 2
+    LeetCodeUtil::BuildIntMatrixFromString("[[2,2],[3,3]]", &inputVVI);
+    Solution1996 sol1996;
+    cout << "\n1996. The Number of Weak Characters in the Game: " << sol1996.numberOfWeakCharacters(inputVVI) << endl;
 }
